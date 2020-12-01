@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <link rel="stylesheet" href="style.css">
+    <style>
+      body{
+        overflow: scroll;
+        height: auto;
+        background: white;
+      }
+    </style>
+    <title>Midterm Project Documentation</title>
+  </head>
+  <body>
+      <section>
+      <h1>CovidStory <span>&#8212; Claire Wang & Kelly Wang</span></h1>
+      <p><a href="index.html">CLICK HERE TO PLAY THE GAME</a></p>
+      <p>For our midterm project, we decided to recreate MapleStory, a 2D roleplaying game. Players in a virtual world can kill monsters, collect rewards, and purchase items in a shop. However, for our game, instead of having the player kill monsters, we had them kill covid particles. Each level is a different part of the world, and when all four levels are cleared, Covid-19 is eradicated.</p>
+      <img src="screenshots/japan.png">
+      <p>We started by implementing the basic gameplay on a single level. As a tile-based 2D game, we used a tilemap and a two-dimensional array to store and draw the formations of each level. This also made collision detection easier, because instead of looping through each platform every time the player moved, we could simply find which tile of the game the player was moving to, and check to see what kind of tile was in the 2D array at that location. If there is a platform tile, the player gets stopped, but if not, the player can continue to move.</p>
+      <p>Each covid particle stores its own health points and has a location that is randomly generated. They move on the X-axis based on Perlin Noise, but don't move vertically. If the player comes into contact with a covid particle, they will lose health points. To kill the covid particles, the player can shoot bullets from a magic gun using the ‘X' key. Once a covid particle's health points reach 0, they die, and the player gains experience points. Once all the covid particles have been killed, a portal opens up on the right side of the page, which the user can use to go back to the map. If the player's health points drop below 0, then they lose the game.</p>
+      <img src="screenshots/portal.png">
+      <img src="screenshots/map.png">
+      <p>The map features multiple portals to different worlds and a shop. Each portal gets unlocked as soon as the previous level is completed. Once you have finished a level, you can go back to play again to gain more experience points.</p>
+      <p>As the levels progress, the covid particles get stronger. They have more health points and cause more damage to the player. However, the player also gets stronger upon level completion. The player gains more health points and their bullets do more damage.</p>
+      <img src="screenshots/philippines.png">
+      <img src="screenshots/paris.png">
+      <p>To further strengthen themselves, the player can visit the shop. We decided to allow users to use the mouse in the shop just to simplify the user experience. Each item in the shop costs a different amount of experience points. Some will restore the player's health, some will upgrade the player's weapons or speed.</p>
+      <img src="screenshots/shop.png">
+      <img src="screenshots/shop-dialog.png">
+      <p>For the player's upgrades, we realized that a player could become really overpowered by using them multiple times. For example, for our bullet power power-up the bullet power is increased by 20%. After a few purchases the bullet power could be increased by as much as 2x. So we decided to increase the price of power-ups each time they are purchased to prevent this type of situation.</p>
+      <p>For the future, we would like to be able to add more levels, more items to the shop that can be used during levels, and even player customizations.</p>
+      <section>
+  </body>
+</html>
