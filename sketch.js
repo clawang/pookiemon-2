@@ -376,7 +376,7 @@ function draw() {
     textAlign(CENTER);
     text('YOU CONTRACTED COVID', 500, 250);
     textSize(20);
-    text('TRY AGAIN LATER', 500, 280);
+    text('TRY AGAIN', 500, 280);
     if(down === 100) {
       player.xp = playerOldStats.xp;
       player.hp = playerOldStats.health;
@@ -939,9 +939,9 @@ class Bullet {
 
 class Covid {
   constructor(level) {
-    this.xPos = random(100,900);
-    this.xStart = this.xPos;
-    this.yPos = random(100,400);
+    this.xVal = random(0,1000);
+    this.yVal = random(0,500);
+    console.log(this.xVal + ',' + this.yVal);
     this.hpFull = covidStats[level].health;
     this.hp = this.hpFull;
     this.hit = covidStats[level].hp;
@@ -956,19 +956,26 @@ class Covid {
     this.level = level;
     this.xOffset = 0;
     this.yOffset = 0;
+    this.xPos = 0;
+    this.yPos = 0;
   }
 
   draw() {
     imageMode(CENTER);
-    this.xPrev = this.xPos;
-    this.yPrev = this.yPos;
     if(!this.dead) {
       let x = noise(this.seed);
       let a = noise(this.seed2);
-      if(this.level > 3 && this.hp < this.hpFull) {
+      if(this.level > 3) {
         let a = noise(this.seed2);
-        let xRange = Math.round((player.xPos - this.xPos) / 100);
-        let yRange = Math.round((player.yPos - this.yPos) / 100);
+        let xRange;
+        let yRange;
+        if(this.hp < this.hpFull) {
+	        xRange = Math.round((player.xPos - this.xPos) / 100);
+	        yRange = Math.round((player.yPos - this.yPos) / 100);
+	    } else {
+	    	xRange = 0;
+	    	yRange = 0;
+	    }
         if(this.xOffset < 800 && this.xOffset > -800) {
           this.xOffset += Math.sign(xRange);
         }
@@ -978,11 +985,14 @@ class Covid {
         this.xPos = map(x, 0, 1, Math.max(this.xOffset, 0), Math.min(1000 + this.xOffset, 1000));
         this.yPos = map(a, 0, 1, Math.max(this.yOffset, 0), Math.min(500 + this.yOffset, 500));
       } else {
-        let r = map(x, 0, 1, 0, 1000);
+        let r = map(x, 0, 1, Math.max(this.xVal - 300, 50), Math.min(this.xVal + 300, 950));
+        //console.log(r);
         this.xPos = r;
         if(this.level > 1) {
-          let b = map(a, 0, 1, 0, 500);
+          let b = map(a, 0, 1, Math.max(this.yVal - 200, 50), Math.min(this.yVal + 200, 450));
           this.yPos = b;
+        } else {
+          this.yPos = map(this.yVal, 0, 500, 100, 400);
         }
       }
       image(this.artwork, this.xPos, this.yPos, this.width, this.height);
