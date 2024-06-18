@@ -1,22 +1,32 @@
 <!doctype html>
 <html>
-  <head>
-    <style>
-    </style>
-    <!-- the standard p5 drawing and animation library -->
-    <script src="p5.min.js"></script>
 
-    <!-- the standard p5 sound library
+<head>
+  <style>
+  </style>
+  <!-- the standard p5 drawing and animation library -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.js"></script>
+
+  <!-- the standard p5 sound library
          note: this library will fail if not loaded over
          a secure connection (https) or on your localhost) -->
-    <script src="p5.sound.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/addons/p5.sound.min.js"></script>
 
-    <!-- your custom sketch file -->
-    <script src="sketch.js"></script>
-    <link rel="stylesheet" href="style.css">
-    <title>Midterm Project</title>
-  </head>
-  <body>
-      <div id="game-container"></div>
-  </body>
+  <!-- your custom sketch file -->
+  <script src="sketch.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="./assets/images/favicon.png">
+  <title>Pookiemon</title>
+</head>
+
+<body>
+  <div class="container">
+    <div id="game-container"></div>
+    <div id="instructions">
+      <p>Press 'A' to select and 'S' to go back.</p>
+      <p>Made by <a href="https://clawang.github.io/" target="_blank">Claire Wang</a>.</p>
+    </div>
+  </div>
+</body>
+
 </html>
