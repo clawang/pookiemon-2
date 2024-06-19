@@ -819,10 +819,13 @@ function keyPressed() {
             if (pp[cursorIndex[0]][cursorIndex[1]] > 0) {
               if (cursorIndex[0] === 0 && cursorIndex[1] === 0) {
                 fightScreen = 3;
+                usedMoves++;
               } else if (cursorIndex[0] === 0 && cursorIndex[1] === 1) {
                 fightScreen = 4;
+                usedMoves++;
               } else if (cursorIndex[0] === 1 && cursorIndex[1] === 0) {
                 fightScreen = 5;
+                usedMoves++;
               } else if (cursorIndex[0] === 1 && cursorIndex[1] === 1) {
                 fightScreen = 6;
               }
@@ -842,7 +845,6 @@ function keyPressed() {
             }
             currentCharacter = 0;
             clickSound.play();
-            usedMoves++;
             break;
           case 6:
             if (textStep < 4 || getItemSoundDone) {
