@@ -129,7 +129,8 @@ let speechIndex = -1;
 let speeches = [
   ["Claire really loves you, you know.", "She spent hours and hours working on this game.", "She'll kill herself if you don't like it."],
   ["I heard it's your and Claire's first anniversary?", "Congrats, man!"],
-  ["Woah that car over there looks terrible!"]
+  ["Woah that car over there looks terrible!"],
+  ["LITTLEROOT TOWN"]
 ];
 let buttonLocked = false;
 
@@ -162,7 +163,10 @@ let abeBack;
 let abeSprite;
 let abePosition = 0;
 let abeTransition = 255;
+let abeShake = false;
+let abeXPos = 0;
 let abeScale = 1 / 197;
+let usedMoves = 0;
 const cursorPositions = [
   [],
   [
@@ -183,6 +187,7 @@ let bagArrow;
 let bagCursorIndex = 0;
 let hpWidth = 0;
 let hpAnimation = false;
+let getItemSoundDone = false;
 
 // load in all of our graphical assets
 function preload() {
@@ -394,6 +399,9 @@ function drawLevel(level) {
     fill(0);
     let displayText = typeWriter(speeches[speechIndex][textStep]);
     text(displayText, 150 * multiplier, 1303 * multiplier, 2000 * multiplier);
+    player.disabled = true;
+  } else {
+    player.disabled = false;
   }
 }
 
@@ -431,7 +439,7 @@ function drawFight() {
     if (abeScale < 1) {
       abeScale += 0.1;
     }
-    image(abeBack, (649 - 297 * abeScale / 2) * multiplier, (1134 - abeScale * 586 + abePosition) * multiplier, (649 + 297 * abeScale / 2) * multiplier, (1134 + abePosition) * multiplier);
+    image(abeBack, (649 - 297 * abeScale / 2 + abeXPos) * multiplier, (1134 - abeScale * 586 + abePosition) * multiplier, (649 + 297 * abeScale / 2 + abeXPos) * multiplier, (1134 + abePosition) * multiplier);
     if (abeTransition > 0) {
       tint(255, abeTransition);
       image(abeSprite, (649 - 297 * abeScale / 2) * multiplier, (1134 - abeScale * 586) * multiplier, (649 + 297 * abeScale / 2) * multiplier, 1134 * multiplier);
@@ -495,12 +503,15 @@ function drawFight() {
     drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
   } else if (fightScreen === 5) {
     // examine move
-    const text = ["ABRAHAM used EXAMINE!", "Abraham observes the car from all angles.", "It's not very effective..."];
+    const text = ["ABRAHAM used EXAMINE!", "\"Woah, it's an old 1980's Yugo!\"", "It's not very effective..."];
     let displayText = typeWriter(text[textStep]);
     drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
   } else if (fightScreen === 6) {
     // haggle move
-    const text = ["ABRAHAM used HAGGLE!", "\"Hey Man, I'll take it for $800!\"", "\"...You know what? Yeah, sure, it's yours.\"", "\"Oh shit really? I wasn't expecting that to work.\"", "ABRAHAM now owns SHITTY USED CAR!"];
+    let text = ["ABRAHAM used HAGGLE!", "\"Hey Man, I'll take it for $800!\"", "\"...You know what? Yeah, sure, it's yours.\"", "\"Oh shit really? I wasn't expecting that to work.\"", "ABRAHAM now owns SHITTY USED CAR!"];
+    if (usedMoves < 3) {
+      text = ["You haven't used all your other moves yet!"];
+    }
     let displayText = typeWriter(text[textStep]);
     drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
   } else if (fightScreen === 7) {
@@ -508,13 +519,14 @@ function drawFight() {
     fill(79, 90, 94);
     rectMode(CORNERS);
     if (hpAnimation) {
-      // hpWidth++;
-      if (hpWidth === 0) attackSound.play();
+      abeShake = false;
       hpWidth = hpWidth + 5;
       if (hpWidth === 475) {
         hpAnimation = false;
         currentCharacter = 0;
       }
+    } else if (abeShake) {
+      abeXPos = abeXPos > 0 ? -10 : 10;
     }
     rect((2168 - hpWidth) * multiplier, 900 * multiplier, 2166 * multiplier, 921 * multiplier);
     const text = ["Wild SHITTY USED CAR used BREAK DOWN!", "It's super effective!"];
@@ -558,7 +570,7 @@ const bagItems = [
   {
     name: "Air Tag",
     quantity: 8,
-    description: "Each attached to various items."
+    description: "How else are you supposed to know where your shit is?"
   },
   {
     name: "Car Play",
@@ -693,6 +705,7 @@ function keyPressed() {
         cursorIndex[1] = 0;
       } else if (fightScreen === 11) {
         bagCursorIndex = (bagCursorIndex - 1 + bagItems.length) % bagItems.length;
+        clickSound.play();
       }
     }
   }
@@ -705,6 +718,7 @@ function keyPressed() {
         cursorIndex[1] = 1;
       } else if (fightScreen === 11) {
         bagCursorIndex = (bagCursorIndex + 1) % bagItems.length;
+        clickSound.play();
       }
     }
   }
@@ -763,6 +777,9 @@ function keyPressed() {
             } else if (xTile === 14 &&
               yTile >= 1 && yTile <= 2) { // npc 3
               speechIndex = 2;
+              clickSound.play();
+            } else if (xTile === 17 && yTile === 8) { // town sign
+              speechIndex = 3;
               clickSound.play();
             }
           }
@@ -825,23 +842,36 @@ function keyPressed() {
             }
             currentCharacter = 0;
             clickSound.play();
+            usedMoves++;
             break;
           case 6:
-            textStep++;
+            if (textStep < 4 || getItemSoundDone) {
+              textStep++;
+              currentCharacter = 0;
+              clickSound.play();
+            }
+            if (usedMoves < 3 && textStep >= 1) {
+              fightScreen = 2;
+              textStep = 0;
+              pp[cursorIndex[0]][cursorIndex[1]] = 1;
+            }
             if (textStep > 4) {
               fightScreen = 7;
               textStep = 0;
               battleLoop.play();
             }
-            if (textStep === 4) {
+            if (textStep === 4 && !getItemSound.isPlaying()) {
               battleLoop.pause();
               getItemSound.play();
+              getItemSound.onended(() => getItemSoundDone = true);
             }
-            currentCharacter = 0;
-            clickSound.play();
             break;
           case 7:
-            hpAnimation = true;
+            if (!abeShake && !hpAnimation) {
+              abeShake = true;
+              attackSound.play();
+              attackSound.onended(() => hpAnimation = true);
+            }
             if (hpWidth >= 475) {
               fightScreen = 8;
               faintSound.play();
