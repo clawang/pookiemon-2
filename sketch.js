@@ -1,3 +1,6 @@
+import { Fight, Contender, Move, drawFight, fightArrowKeyPressed, fightAKeyPressed } from './fight.js';
+import { typeWriter } from "./text.js";
+
 //game variables
 const canvasWidth = 800;
 const canvasHeight = 533;
@@ -90,19 +93,21 @@ let startPos;
 let backgroundOffset;
 
 var characterSprites = [[], [], [], []];
-let levelSound;
-let battleSound;
-let battleLoop;
-let clickSound;
-let getItemSound;
-let faintSound;
-let pokeballSound;
-let attackSound;
+let sounds = {
+  levelSound: null,
+  battleSound: null,
+  battleLoop: null,
+  clickSound: null,
+  getItemSound: null,
+  faintSound: null,
+  pokeballSound: null,
+  attackSound: null,
+  getItemSoundDone: false,
+};
 
 //other stuff
 let level = 0;
 let state = -1; //-1 is start screen, 0 is map, 1 is fight, 2 is game over
-let levelChange = false
 let screenIndex = -1;
 let screenInterval = 100;
 let screenColors = {
@@ -112,18 +117,15 @@ let screenColors = {
   3: 'rgba(0, 0, 255',
   4: 'rgba(255, 255, 255'
 }
-let transition = false;
-let transitionDirection = 0;
-let transitionTimer = 0;
-let transitionType = 0;
-let transitionCount = 0;
-let popUp = false;
-let popUpText = '';
-let selectedItem = -1;
-let message = false;
-let messageText = '';
-let messageTimer = 200;
-let mapPos = [canvasHeight / 2, 430];
+
+let transition = {
+  started: false,
+  direction: 0,
+  timer: 0,
+  type: 0,
+  count: 0
+};
+
 let textBubble2;
 let speechIndex = -1;
 let speeches = [
@@ -132,7 +134,10 @@ let speeches = [
   ["Woah that car over there looks terrible!"],
   ["LITTLEROOT TOWN"]
 ];
-let buttonLocked = false;
+let typeWriterProps = {
+  currentCharacter: 0,
+  buttonLocked: false
+};
 
 //direction variables
 let up = 0;
@@ -141,53 +146,13 @@ let left = 0;
 let right = 0;
 
 // fight sequence variables
-let openFight = false;
-let openFightTimer = 0;
-let textBubble;
-let cursor;
-let cursorIndex = [0, 0];
-let fightScreen = 0;
+let fights;
+let currentFight = 0;
+
 let textStep = 0;
-let pookiemonBubble;
-let pookiemonEntranceStage = 0;
-let pookiemonEntrance = 0;
-let foeEntrance = 0;
-let foeBubbleEntrance = 0;
-let battlePlatform;
-let foeBattlePlatform;
-let foeBubble;
-let fightBubble;
-let fightBattle;
 let fightCar;
 let abeBack;
 let abeSprite;
-let abePosition = 0;
-let abeTransition = 255;
-let abeShake = false;
-let abeXPos = 0;
-let abeScale = 1 / 197;
-let usedMoves = 0;
-const cursorPositions = [
-  [],
-  [
-    [[1279, 1230], [1279, 1393]],
-    [[1879, 1230], [1879, 1393]]
-  ],
-  [
-    [[77, 1220], [77, 1383]],
-    [[840, 1220], [840, 1383]]
-  ]
-];
-const pp = [[1, 1], [1, 1]];
-const moveTypes = [["BOYFRIEND", "EXTROVERT"], ["MECHANIC", "SKEEZE"]];
-let currentCharacter = 0;
-let pookiemonInfo;
-let bagBg;
-let bagArrow;
-let bagCursorIndex = 0;
-let hpWidth = 0;
-let hpAnimation = false;
-let getItemSoundDone = false;
 
 // load in all of our graphical assets
 function preload() {
@@ -223,31 +188,48 @@ function preload() {
   characterSprites[3][2] = characterSprites[3][0];
   characterSprites[3][3] = loadImage("assets/images/character-sprites/back-3.png");
 
-  textBubble = loadImage("assets/images/text-bubble.png");
   textBubble2 = loadImage("assets/images/text-bubble2.png");
-  fightBubble = loadImage("assets/images/fight-bubble.png");
-  fightBattle = loadImage("assets/images/fight-battle.png");
-  pookiemonBubble = loadImage("assets/images/pookiemon-bubble.png");
-  battlePlatform = loadImage("assets/images/battle-platform.png");
-  foeBattlePlatform = loadImage("assets/images/battle-platform-foe.png");
-  foeBubble = loadImage("assets/images/foe-bubble.png");
   fightCar = loadImage("assets/images/car-battle.png");
   abeBack = loadImage("assets/images/abe-back.png");
   abeSprite = loadImage("assets/images/sprite.png");
-  cursor = loadImage("assets/images/arrow.png");
-  bagBg = loadImage("assets/images/bag.png");
-  bagArrow = loadImage("assets/images/bag-arrow.png");
-  pookiemonInfo = loadImage("assets/images/pokemon-info.png");
 
   //sounds
-  levelSound = loadSound("assets/sounds/littleroot-town.mp3");
-  battleSound = loadSound("assets/sounds/battle-intro.mp3");
-  battleLoop = loadSound("assets/sounds/battle-loop.mp3");
-  clickSound = loadSound("assets/sounds/click.mp3");
-  getItemSound = loadSound("assets/sounds/get-item.mp3");
-  faintSound = loadSound("assets/sounds/faint.mp3");
-  pokeballSound = loadSound("assets/sounds/exit-ball.mp3");
-  attackSound = loadSound("assets/sounds/attack.mp3");
+  sounds.levelSound = loadSound("assets/sounds/littleroot-town.mp3");
+  sounds.battleSound = loadSound("assets/sounds/battle-intro.mp3");
+  sounds.battleLoop = loadSound("assets/sounds/battle-loop.mp3");
+  sounds.clickSound = loadSound("assets/sounds/click.mp3");
+  sounds.getItemSound = loadSound("assets/sounds/get-item.mp3");
+  sounds.faintSound = loadSound("assets/sounds/faint.mp3");
+  sounds.pokeballSound = loadSound("assets/sounds/exit-ball.mp3");
+  sounds.attackSound = loadSound("assets/sounds/attack.mp3");
+
+  fights = [
+    new Fight(
+      new Contender(
+        abeBack,
+        'ABRAHAM',
+        25,
+        5,
+        abeSprite
+      ),
+      new Contender(
+        fightCar,
+        'SHITTY USED CAR',
+      ),
+      [
+        [
+        new Move('SHOW GF', 'BOYFRIEND', 1),
+        new Move('YELL TO OWNER', 'EXTROVERT', 1),
+        ],
+        [
+        new Move('EXAMINE', 'MECHANIC', 1),
+        new Move('HAGGLE', 'SKEEZE', 1)
+        ]
+      ],
+      canvasWidth,
+      canvasHeight
+    )
+  ];
 }
 
 function setup() {
@@ -288,27 +270,27 @@ function draw() {
     if (keyIsDown(32)) {
       state = 0;
       userStartAudio();
-      levelSound.play();
+      sounds.levelSound.play();
     }
   } else if (state === 0) {
     tileMap = tileMaps[0];
     drawLevel(0);
   } else if (state === 1) {
-    drawFight();
+    drawFirstFight();
   } else if (state === 2) {
     drawGameOver();
   }
 
-  if (message) {
-    //stroke(141, 108, 87);
-    fill(255, 150, 0);
-    textSize(15);
-    text(messageText, 503, 530);
-    messageTimer--;
-    if (messageTimer <= 0) {
-      message = false;
-    }
-  }
+  // if (message) {
+  //   //stroke(141, 108, 87);
+  //   fill(255, 150, 0);
+  //   textSize(15);
+  //   text(messageText, 503, 530);
+  //   messageTimer--;
+  //   if (messageTimer <= 0) {
+  //     message = false;
+  //   }
+  // }
 
   if (screenIndex >= 0 && screenInterval > 0) {
     let str = screenColors[screenIndex] + ',' + (screenInterval / 100) + ')';
@@ -318,52 +300,49 @@ function draw() {
     screenInterval--;
   }
 
-  if (transition) {
-    let alpha = map(transitionTimer, 0, 100, 0, 255);
+  if (transition.started) {
+    let alpha = map(transition.timer, 0, 100, 0, 255);
 
-    if (transitionType === 0) {
-      transitionTimer -= 10;
-      fill(87, 97, 90, transitionDirection > 0 ? alpha : 255 - alpha);
-    } else if (transitionType === 1) {
-      transitionTimer -= 2;
-      fill(0, transitionDirection > 0 ? alpha : 255 - alpha);
+    if (transition.type === 0) {
+      transition.timer -= 10;
+      fill(87, 97, 90, transition.direction > 0 ? alpha : 255 - alpha);
+    } else if (transition.type === 1) {
+      transition.timer -= 2;
+      fill(0, transition.direction > 0 ? alpha : 255 - alpha);
     }
     rect(0, 0, canvasWidth, canvasHeight);
-    if (transitionTimer <= 0 && transitionDirection === 0) {
-      transitionTimer = 100;
-      transitionDirection = 1;
+    if (transition.timer <= 0 && transition.direction === 0) {
+      transition.timer = 100;
+      transition.direction = 1;
       if (state === 1) {
         state = 2;
-      } else if (state === 0 && transitionCount >= 3) {
+      } else if (state === 0 && transition.count >= 3) {
         state = 1;
-        openFight = true;
-        transition = false;
+        fights[currentFight].openFight.started = true;
+        transition.started = false;
       }
     }
-    if (transitionTimer <= 0 && transitionDirection === 1) {
-      if (transitionType === 0) {
-        transitionCount++;
-        transitionTimer = 100;
-        transitionDirection = 0;
-        if (transitionCount >= 3) {
-          transitionType = 1;
+    if (transition.timer <= 0 && transition.direction === 1) {
+      if (transition.type === 0) {
+        transition.count++;
+        transition.timer = 100;
+        transition.direction = 0;
+        if (transition.count >= 3) {
+          transition.type = 1;
           // transition = false;
-          // transitionCount = 0;
+          // transition.count = 0;
         }
       } else {
-        transition = false;
+        transition.started = false;
       }
     }
   }
 
-  if (openFight) {
+  if (fights[currentFight].openFight.started) {
     fill(0);
-    rect(0, 0 - openFightTimer, canvasWidth, canvasHeight / 2);
-    rect(0, canvasHeight / 2 + openFightTimer, canvasWidth, canvasHeight / 2);
-    openFightTimer += 4;
-    if (openFightTimer > canvasHeight / 2) {
-      openFight = false;
-    }
+    rect(0, 0 - fights[currentFight].openFight.count, canvasWidth, canvasHeight / 2);
+    rect(0, canvasHeight / 2 + fights[currentFight].openFight.count, canvasWidth, canvasHeight / 2);
+    fights[currentFight].openFight.increment();
   }
 }
 
@@ -397,7 +376,7 @@ function drawLevel(level) {
     textFont(font);
     textSize(40);
     fill(0);
-    let displayText = typeWriter(speeches[speechIndex][textStep]);
+    let displayText = typeWriter(speeches[speechIndex][textStep], typeWriterProps);
     text(displayText, 150 * multiplier, 1303 * multiplier, 2000 * multiplier);
     player.disabled = true;
   } else {
@@ -405,252 +384,8 @@ function drawLevel(level) {
   }
 }
 
-function drawFight() {
-  imageMode(CENTER);
-  // background
-  image(backgrounds[1], canvasWidth / 2, canvasHeight / 2, canvasWidth, canvasHeight);
-
-  if (foeEntrance < 2375) {
-    foeEntrance += 19;
-  } else if (foeEntrance >= 2375 && pookiemonEntranceStage === 0) {
-    pookiemonEntranceStage = 1;
-  }
-
-  imageMode(CORNER);
-  image(battlePlatform, (2414 - foeEntrance) * multiplier, 1008 * multiplier, 1188 * multiplier, 110 * multiplier);
-
-  image(foeBattlePlatform, (foeEntrance - 1271) * multiplier, 470 * multiplier, 1271 * multiplier, 311 * multiplier);
-  image(fightCar, (foeEntrance - 975) * multiplier, 290 * multiplier, 250, 147);
-
-  if (pookiemonEntranceStage === 1 && foeBubbleEntrance < 1118) {
-    foeBubbleEntrance += 26;
-  } else if (foeBubbleEntrance >= 1118 && pookiemonEntranceStage === 1) {
-    pookiemonEntranceStage = 2;
-  }
-  image(foeBubble, (foeBubbleEntrance - 992) * multiplier, 155 * multiplier, 992 * multiplier, 277 * multiplier);
-  textAlign(LEFT);
-  textFont(font);
-  textSize(30);
-  drawYellowTextWithShadow("SHITTY USED CAR", (foeBubbleEntrance - 932) * multiplier, 270 * multiplier);
-  drawYellowTextWithShadow("Lv100", (foeBubbleEntrance - 308) * multiplier, 270 * multiplier);
-
-  if (pookiemonEntranceStage > 2) {
-    imageMode(CORNERS);
-    if (abeScale < 1) {
-      abeScale += 0.1;
-    }
-    image(abeBack, (649 - 297 * abeScale / 2 + abeXPos) * multiplier, (1134 - abeScale * 586 + abePosition) * multiplier, (649 + 297 * abeScale / 2 + abeXPos) * multiplier, (1134 + abePosition) * multiplier);
-    if (abeTransition > 0) {
-      tint(255, abeTransition);
-      image(abeSprite, (649 - 297 * abeScale / 2) * multiplier, (1134 - abeScale * 586) * multiplier, (649 + 297 * abeScale / 2) * multiplier, 1134 * multiplier);
-      noTint();
-      if (abeScale >= 1) abeTransition -= 25;
-    }
-    if (abeTransition <= 0 && pookiemonEntrance < 1122) {
-      pookiemonEntrance += 40;
-    }
-    imageMode(CORNER);
-    image(pookiemonBubble, (2378 - pookiemonEntrance) * multiplier, 733 * multiplier, 1028 * multiplier, 357 * multiplier);
-    textSize(35);
-    drawYellowTextWithShadow("ABRAHAM", (2519 - pookiemonEntrance) * multiplier, 860 * multiplier);
-    drawYellowTextWithShadow("Lv5", (3202 - pookiemonEntrance) * multiplier, 860 * multiplier);
-    drawYellowTextWithShadow("25/25", (3122 - pookiemonEntrance) * multiplier, 1030 * multiplier);
-  }
-  textSize(45);
-  image(textBubble, 0, 1123 * multiplier, canvasWidth, 462 * multiplier);
-
-  if (fightScreen === 0) {
-    if (pookiemonEntranceStage > 1) {
-      const text = ["Wild SHITTY USED CAR appeared!", "Go! ABRAHAM!"];
-      let introText = typeWriter(text[textStep]);
-      drawTextWithShadow(introText, 50, 440);
-    }
-  } else if (fightScreen === 1) {
-    // battle menu screen
-    image(fightBubble, 400, 376, 400, 155);
-    resetMatrix();
-    textWrap(WORD);
-    textAlign(LEFT);
-    textLeading(50);
-    drawTextWithShadow("What will ABRAHAM do?", 90 * multiplier, 1323 * multiplier, 636 * multiplier);
-    drawBlackTextWithShadow("FIGHT", 0, 1352 * multiplier, 1323 * multiplier);
-    drawBlackTextWithShadow("BAG", 0, 1954 * multiplier, 1323 * multiplier);
-    drawBlackTextWithShadow("POOKIEMON", 0, 1352 * multiplier, 1479 * multiplier);
-    drawBlackTextWithShadow("RUN", 0, 1954 * multiplier, 1479 * multiplier);
-    image(cursor, cursorPositions[1][cursorIndex[0]][cursorIndex[1]][0] * multiplier, cursorPositions[1][cursorIndex[0]][cursorIndex[1]][1] * multiplier, 66 * multiplier, 106 * multiplier);
-  } else if (fightScreen === 2) {
-    // fight menu screen
-    imageMode(CORNER);
-    image(fightBattle, 0, 376, canvasWidth, 155);
-    drawBlackTextWithShadow("SHOW GF", 0, 153 * multiplier, 1310 * multiplier);
-    drawBlackTextWithShadow("EXAMINE", 0, 920 * multiplier, 1310 * multiplier);
-    drawBlackTextWithShadow("YELL TO OWNER", 0, 153 * multiplier, 1466 * multiplier);
-    drawBlackTextWithShadow("HAGGLE", 0, 920 * multiplier, 1466 * multiplier);
-    drawBlackTextWithShadow("PP", pp[cursorIndex[0]][cursorIndex[1]] + 1, 1670 * multiplier, 1310 * multiplier);
-    drawBlackTextWithShadow(`${pp[cursorIndex[0]][cursorIndex[1]]}/1`, pp[cursorIndex[0]][cursorIndex[1]] + 1, 2102 * multiplier, 1310 * multiplier);
-    textSize(38);
-    drawBlackTextWithShadow(`TYPE/${moveTypes[cursorIndex[0]][cursorIndex[1]]}`, 0, 1660 * multiplier, 1466 * multiplier);
-    image(cursor, cursorPositions[2][cursorIndex[0]][cursorIndex[1]][0] * multiplier, cursorPositions[2][cursorIndex[0]][cursorIndex[1]][1] * multiplier, 66 * multiplier, 106 * multiplier);
-  } else if (fightScreen === 3) {
-    // show gf move
-    const text = ["ABRAHAM used SHOW GF!", "\"Hey Babe, let's check out this car! Hop out!\"", "It's not very effective..."];
-    let displayText = typeWriter(text[textStep]);
-    drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
-  } else if (fightScreen === 4) {
-    // yell to owner move
-    const text = ["ABRAHAM used YELL TO OWNER!", "\"Hey Dudeeee, sick car!\"", "It's not very effective..."];
-    let displayText = typeWriter(text[textStep]);
-    drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
-  } else if (fightScreen === 5) {
-    // examine move
-    const text = ["ABRAHAM used EXAMINE!", "\"Woah, it's an old 1980's Yugo!\"", "It's not very effective..."];
-    let displayText = typeWriter(text[textStep]);
-    drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
-  } else if (fightScreen === 6) {
-    // haggle move
-    let text = ["ABRAHAM used HAGGLE!", "\"Hey Man, I'll take it for $800!\"", "\"...You know what? Yeah, sure, it's yours.\"", "\"Oh shit really? I wasn't expecting that to work.\"", "ABRAHAM now owns SHITTY USED CAR!"];
-    if (usedMoves < 3) {
-      text = ["You haven't used all your other moves yet!"];
-    }
-    let displayText = typeWriter(text[textStep]);
-    drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
-  } else if (fightScreen === 7) {
-    // haggle move ending
-    fill(79, 90, 94);
-    rectMode(CORNERS);
-    if (hpAnimation) {
-      abeShake = false;
-      hpWidth = hpWidth + 5;
-      if (hpWidth === 475) {
-        hpAnimation = false;
-        currentCharacter = 0;
-      }
-    } else if (abeShake) {
-      abeXPos = abeXPos > 0 ? -10 : 10;
-    }
-    rect((2168 - hpWidth) * multiplier, 900 * multiplier, 2166 * multiplier, 921 * multiplier);
-    const text = ["Wild SHITTY USED CAR used BREAK DOWN!", "It's super effective!"];
-    let displayText = hpWidth === 475 ? typeWriter(text[1]) : typeWriter(text[0]);
-    drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
-  } else if (fightScreen === 8) {
-    abePosition += 30;
-    rect((2168 - hpWidth) * multiplier, 900 * multiplier, 2166 * multiplier, 921 * multiplier);
-    const text = ["ABRAHAM fainted!"];
-    let displayText = typeWriter(text[0]);
-    drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
-  } else if (fightScreen === 10) {
-    image(pookiemonInfo, 0, 0, canvasWidth, canvasHeight);
-  } else if (fightScreen === 11) {
-    // bag
-    drawBag();
-  } else if (fightScreen === 12) {
-    // run
-    const text = ["Couldn't get away!"];
-    let displayText = typeWriter(text[textStep]);
-    drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
-  }
-}
-
-const bagItems = [
-  {
-    name: "Sunglasses",
-    quantity: 1,
-    description: "Ray Bans, of course."
-  },
-  {
-    name: "Cash Bills",
-    quantity: 100,
-    description: "For that cash disco- I mean, helping small businesses."
-  },
-  {
-    name: "Adderall",
-    quantity: "1800mg",
-    description: "To treat the raging ADHD. Or maybe the Narcolepsy."
-  },
-  {
-    name: "Air Tag",
-    quantity: 8,
-    description: "How else are you supposed to know where your shit is?"
-  },
-  {
-    name: "Car Play",
-    quantity: 1,
-    description: "A non-negotiable."
-  },
-  {
-    name: "Loose Screws",
-    quantity: 24,
-    description: "Real mechanic shit."
-  },
-  {
-    name: "Oil Stains",
-    quantity: 57,
-    description: "It's part of the blue collar cosplay."
-  },
-  {
-    name: "Fish",
-    quantity: 13,
-    description: "Awww Babe, you love fish!"
-  }
-];
-
-function drawBag() {
-  image(bagBg, 0, 0, canvasWidth, canvasHeight);
-  bagItems.forEach((item, index) => {
-    drawBlackTextWithShadow(item.name.toUpperCase(), 0, 1191 * multiplier, 270 * multiplier + index * 45, 1079 * multiplier);
-    textAlign(RIGHT);
-    drawBlackTextWithShadow("x " + item.quantity, 0, 1200 * multiplier, 270 * multiplier + index * 45, 1079 * multiplier);
-    textAlign(LEFT);
-  });
-  drawYellowTextWithShadow("ITEMS", 500 * multiplier, 198 * multiplier);
-  image(bagArrow, 1120 * multiplier, 179 * multiplier + bagCursorIndex * 45, 66 * multiplier, 106 * multiplier);
-  textLeading(47);
-  drawBlackTextWithShadow(bagItems[bagCursorIndex].description, 0, 31 * multiplier, 1140 * multiplier, 1011 * multiplier);
-  textLeading(50);
-}
-
-function drawTextWithShadow(textContent, x, y, maxWidth) {
-  fill(102, 88, 113);
-  text(textContent, x + 3, y + 3, maxWidth);
-  text(textContent, x, y + 3, maxWidth);
-  text(textContent, x + 3, y, maxWidth);
-  fill(255);
-  text(textContent, x, y, maxWidth);
-}
-
-function drawBlackTextWithShadow(textContent, color, x, y, maxWidth) {
-  fill(224, 220, 219);
-  if (color === 1) {
-    fill(243, 220, 167);
-  }
-  text(textContent, x + 3, y + 3, maxWidth);
-  text(textContent, x, y + 3, maxWidth);
-  text(textContent, x + 3, y, maxWidth);
-  fill(70, 73, 71);
-  if (color === 1) {
-    fill(201, 52, 18);
-  }
-  text(textContent, x, y, maxWidth);
-}
-
-function drawYellowTextWithShadow(textContent, x, y, maxWidth) {
-  fill(219, 217, 184)
-  text(textContent, x + 2, y + 2, maxWidth);
-  text(textContent, x, y + 2, maxWidth);
-  text(textContent, x + 2, y, maxWidth);
-  fill(70, 73, 71);
-  text(textContent, x, y, maxWidth);
-}
-
-function typeWriter(str) {
-  const result = str.substring(0, currentCharacter);
-  if (currentCharacter < str.length) {
-    currentCharacter++;
-    buttonLocked = true;
-  } else {
-    buttonLocked = false;
-  }
-  return result;
+function drawFirstFight() {
+  drawFight(canvasWidth, canvasHeight, multiplier, font, fights[currentFight], typeWriterProps);
 }
 
 function drawGameOver() {
@@ -696,61 +431,55 @@ function randomNumber(min, max) {
 }
 
 function keyPressed() {
+  if (state === 1) {
+    fightArrowKeyPressed(keyCode, fights[currentFight], { sounds });
+    fightAKeyPressed(keyCode, fights[currentFight],
+      {
+        typeWriterProps,
+        sounds,
+        transition,
+        canvasHeight,
+        multiplier
+      });
+  }
+
   if (keyCode === UP_ARROW) {
     if (state === 0) {
       up = 1;
       player.graphicType = 3;
-    } else if (state === 1) {
-      if (fightScreen === 1 || fightScreen === 2) {
-        cursorIndex[1] = 0;
-      } else if (fightScreen === 11) {
-        bagCursorIndex = (bagCursorIndex - 1 + bagItems.length) % bagItems.length;
-        clickSound.play();
-      }
     }
   }
   if (keyCode === DOWN_ARROW) {
     if (state === 0) {
       down = 1;
       player.graphicType = 0;
-    } else if (state === 1) {
-      if (fightScreen === 1 || fightScreen === 2) {
-        cursorIndex[1] = 1;
-      } else if (fightScreen === 11) {
-        bagCursorIndex = (bagCursorIndex + 1) % bagItems.length;
-        clickSound.play();
-      }
     }
   }
   if (keyCode === LEFT_ARROW) {
     if (state === 0) {
       left = 1;
       player.graphicType = 1;
-    } else if (state === 1) {
-      cursorIndex[0] = 0;
     }
   }
   if (keyCode === RIGHT_ARROW) {
     if (state === 0) {
       right = 1;
       player.graphicType = 2;
-    } else if (state === 1) {
-      cursorIndex[0] = 1;
     }
   }
   // A
   if (keyCode === 65) {
-    if (!buttonLocked) {
+    if (!typeWriterProps.buttonLocked) {
       if (state === 0) {
         if (speechIndex >= 0) {
           textStep++;
-          currentCharacter = 0;
+          typeWriterProps.currentCharacter = 0;
           if (textStep >= speeches[speechIndex].length) {
             textStep = 0;
             speechIndex = -1;
-            currentCharacter = 0;
+            typeWriterProps.currentCharacter = 0;
           } else {
-            clickSound.play();
+            sounds.clickSound.play();
           }
         } else {
           let xTile = Math.floor(player.getNewXPosition() / spaceSize);
@@ -759,154 +488,36 @@ function keyPressed() {
           // console.log(tileMap[yTile][xTile]);
           if (tileMap[yTile][xTile] === 2) { // interactive tile
             if (xTile >= 10 && xTile <= 13 &&
-              yTile >= 11 && yTile <= 14 && !transition) {
-              transition = true;
-              transitionTimer = 100;
-              transitionDirection = 0;
-              levelSound.stop();
-              battleSound.play();
-              battleSound.onended(() => battleLoop.loop());
+              yTile >= 11 && yTile <= 14 && !transition.started) {
+              transition.started = true;
+              transition.timer = 100;
+              transition.direction = 0;
+              sounds.levelSound.stop();
+              sounds.battleSound.play();
+              sounds.battleSound.onended(() => sounds.battleLoop.loop());
             } else if (xTile === 23 &&
               yTile >= 10 && yTile <= 11) { // npc 1
               speechIndex = 0;
-              clickSound.play();
+              sounds.clickSound.play();
             } else if (xTile === 23 &&
               yTile >= 15 && yTile <= 16) { // npc 2
               speechIndex = 1;
-              clickSound.play();
+              sounds.clickSound.play();
             } else if (xTile === 14 &&
               yTile >= 1 && yTile <= 2) { // npc 3
               speechIndex = 2;
-              clickSound.play();
+              sounds.clickSound.play();
             } else if (xTile === 17 && yTile === 8) { // town sign
               speechIndex = 3;
-              clickSound.play();
+              sounds.clickSound.play();
             }
           }
-        }
-      } else if (state === 1) {
-        switch (fightScreen) {
-          case 0:
-            if (!openFight && pookiemonEntranceStage > 1) {
-              textStep++;
-              if (textStep === 1) {
-                pookiemonEntranceStage = 3;
-                pokeballSound.play();
-              }
-              if (textStep > 1) {
-                fightScreen = 1;
-                textStep = 0;
-              } else {
-                clickSound.play();
-              }
-              currentCharacter = 0;
-            }
-            break;
-          case 1:
-            if (cursorIndex[0] === 0 && cursorIndex[1] === 0) {
-              fightScreen = 2;
-            } else if (cursorIndex[0] === 0 && cursorIndex[1] === 1) {
-              fightScreen = 10;
-            } else if (cursorIndex[0] === 1 && cursorIndex[1] === 0) {
-              fightScreen = 11;
-            } else if (cursorIndex[0] === 1 && cursorIndex[1] === 1) {
-              fightScreen = 12;
-            }
-            clickSound.play();
-            // cursorIndex = [0, 0];
-            break;
-          case 2:
-            if (pp[cursorIndex[0]][cursorIndex[1]] > 0) {
-              if (cursorIndex[0] === 0 && cursorIndex[1] === 0) {
-                fightScreen = 3;
-                usedMoves++;
-              } else if (cursorIndex[0] === 0 && cursorIndex[1] === 1) {
-                fightScreen = 4;
-                usedMoves++;
-              } else if (cursorIndex[0] === 1 && cursorIndex[1] === 0) {
-                fightScreen = 5;
-                usedMoves++;
-              } else if (cursorIndex[0] === 1 && cursorIndex[1] === 1) {
-                fightScreen = 6;
-              }
-              clickSound.play();
-              pp[cursorIndex[0]][cursorIndex[1]]--;
-              // cursorIndex = [0, 0];
-            }
-            break;
-          case 3:
-          case 4:
-          case 5:
-            textStep++;
-            if (textStep > 2) {
-              fightScreen = 1;
-              textStep = 0;
-              cursorIndex = [0, 0];
-            }
-            currentCharacter = 0;
-            clickSound.play();
-            break;
-          case 6:
-            if (textStep < 4 || getItemSoundDone) {
-              textStep++;
-              currentCharacter = 0;
-              clickSound.play();
-            }
-            if (usedMoves < 3 && textStep >= 1) {
-              fightScreen = 2;
-              textStep = 0;
-              pp[cursorIndex[0]][cursorIndex[1]] = 1;
-            }
-            if (textStep > 4) {
-              fightScreen = 7;
-              textStep = 0;
-              battleLoop.play();
-            }
-            if (textStep === 4 && !getItemSound.isPlaying()) {
-              battleLoop.pause();
-              getItemSound.play();
-              getItemSound.onended(() => getItemSoundDone = true);
-            }
-            break;
-          case 7:
-            if (!abeShake && !hpAnimation) {
-              abeShake = true;
-              attackSound.play();
-              attackSound.onended(() => hpAnimation = true);
-            }
-            if (hpWidth >= 475) {
-              fightScreen = 8;
-              faintSound.play();
-            }
-            break;
-          case 8:
-            if (abePosition > canvasHeight / multiplier && !transition) {
-              // game over
-              transition = true;
-              transitionTimer = 100;
-              transitionDirection = 0;
-              battleLoop.setVolume(0, 1);
-            }
-            break;
-          case 12:
-            fightScreen = 1;
-            currentCharacter = 0;
-            clickSound.play();
-            break;
         }
       }
     }
   }
   // S
-  if (keyCode === 83) {
-    if (fightScreen === 2) {
-      fightScreen = 1;
-      cursorIndex = [0, 0];
-    }
-    if (fightScreen === 10 || fightScreen === 11) {
-      fightScreen = 1;
-    }
-  }
+
 };
 
 function keyReleased() {
@@ -928,9 +539,11 @@ function keyReleased() {
   }
 };
 
-window.onload = function () {
-
-}
+window.preload = preload;
+window.setup = setup;
+window.draw = draw;
+window.keyPressed = keyPressed;
+window.keyReleased = keyReleased;
 
 class Character {
   constructor(x, y) {
