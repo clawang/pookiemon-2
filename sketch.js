@@ -1,5 +1,6 @@
-import { Fight, Contender, Move, drawFight, fightArrowKeyPressed, fightAKeyPressed } from './fight.js';
+import { Fight, Contender, Move, drawFight, fightArrowKeyPressed, fightAKeyPressed, fightSKeyPressed } from './fight.js';
 import { typeWriter } from "./text.js";
+import { Character } from "./character.js";
 
 //game variables
 const canvasWidth = 800;
@@ -11,6 +12,10 @@ let logo;
 let version;
 let font;
 let font2;
+const canvas = {
+  width: 800,
+  height: 533,
+};
 
 //level drawing variables
 const tileMaps = [];
@@ -92,7 +97,6 @@ let backgroundSize;
 let startPos;
 let backgroundOffset;
 
-var characterSprites = [[], [], [], []];
 let sounds = {
   levelSound: null,
   battleSound: null,
@@ -140,10 +144,12 @@ let typeWriterProps = {
 };
 
 //direction variables
-let up = 0;
-let down = 0;
-let left = 0;
-let right = 0;
+let directions = {
+  up: 0,
+  down: 0,
+  left: 0,
+  right: 0,
+};
 
 // fight sequence variables
 let fights;
@@ -171,22 +177,23 @@ function preload() {
   });
 
   // character sprites
-  characterSprites[0][0] = loadImage("assets/images/character-sprites/forward-1.png");
-  characterSprites[0][1] = loadImage("assets/images/character-sprites/forward-2.png");
-  characterSprites[0][2] = characterSprites[0][0];
-  characterSprites[0][3] = loadImage("assets/images/character-sprites/forward-3.png");
-  characterSprites[1][0] = loadImage("assets/images/character-sprites/left-1.png");
-  characterSprites[1][1] = loadImage("assets/images/character-sprites/left-2.png");
-  characterSprites[1][2] = characterSprites[1][0];
-  characterSprites[1][3] = loadImage("assets/images/character-sprites/left-3.png");
-  characterSprites[2][0] = loadImage("assets/images/character-sprites/right-1.png");
-  characterSprites[2][1] = loadImage("assets/images/character-sprites/right-2.png");
-  characterSprites[2][2] = characterSprites[2][0];
-  characterSprites[2][3] = loadImage("assets/images/character-sprites/right-3.png");
-  characterSprites[3][0] = loadImage("assets/images/character-sprites/back-1.png");
-  characterSprites[3][1] = loadImage("assets/images/character-sprites/back-2.png");
-  characterSprites[3][2] = characterSprites[3][0];
-  characterSprites[3][3] = loadImage("assets/images/character-sprites/back-3.png");
+  player = new Character(spaceSize);
+  player.characterSprites[0][0] = loadImage("assets/images/character-sprites/forward-1.png");
+  player.characterSprites[0][1] = loadImage("assets/images/character-sprites/forward-2.png");
+  player.characterSprites[0][2] = player.characterSprites[0][0];
+  player.characterSprites[0][3] = loadImage("assets/images/character-sprites/forward-3.png");
+  player.characterSprites[1][0] = loadImage("assets/images/character-sprites/left-1.png");
+  player.characterSprites[1][1] = loadImage("assets/images/character-sprites/left-2.png");
+  player.characterSprites[1][2] = player.characterSprites[1][0];
+  player.characterSprites[1][3] = loadImage("assets/images/character-sprites/left-3.png");
+  player.characterSprites[2][0] = loadImage("assets/images/character-sprites/right-1.png");
+  player.characterSprites[2][1] = loadImage("assets/images/character-sprites/right-2.png");
+  player.characterSprites[2][2] = player.characterSprites[2][0];
+  player.characterSprites[2][3] = loadImage("assets/images/character-sprites/right-3.png");
+  player.characterSprites[3][0] = loadImage("assets/images/character-sprites/back-1.png");
+  player.characterSprites[3][1] = loadImage("assets/images/character-sprites/back-2.png");
+  player.characterSprites[3][2] = player.characterSprites[3][0];
+  player.characterSprites[3][3] = loadImage("assets/images/character-sprites/back-3.png");
 
   textBubble2 = loadImage("assets/images/text-bubble2.png");
   fightCar = loadImage("assets/images/car-battle.png");
@@ -218,12 +225,12 @@ function preload() {
       ),
       [
         [
-        new Move('SHOW GF', 'BOYFRIEND', 1),
-        new Move('YELL TO OWNER', 'EXTROVERT', 1),
+          new Move('SHOW GF', 'BOYFRIEND', 1),
+          new Move('YELL TO OWNER', 'EXTROVERT', 1),
         ],
         [
-        new Move('EXAMINE', 'MECHANIC', 1),
-        new Move('HAGGLE', 'SKEEZE', 1)
+          new Move('EXAMINE', 'MECHANIC', 1),
+          new Move('HAGGLE', 'SKEEZE', 1)
         ]
       ],
       canvasWidth,
@@ -241,7 +248,8 @@ function setup() {
   backgroundOffset = mapVariables[level].backgroundOffset;
   backgroundSize = mapVariables[level].backgroundSize;
   startPos = mapVariables[level].startPos;
-  player = new Character(startPos.x, startPos.y);
+  player.xPos = startPos.x;
+  player.yPos = startPos.y;
 }
 
 function draw() {
@@ -280,17 +288,6 @@ function draw() {
   } else if (state === 2) {
     drawGameOver();
   }
-
-  // if (message) {
-  //   //stroke(141, 108, 87);
-  //   fill(255, 150, 0);
-  //   textSize(15);
-  //   text(messageText, 503, 530);
-  //   messageTimer--;
-  //   if (messageTimer <= 0) {
-  //     message = false;
-  //   }
-  // }
 
   if (screenIndex >= 0 && screenInterval > 0) {
     let str = screenColors[screenIndex] + ',' + (screenInterval / 100) + ')';
@@ -352,7 +349,7 @@ function drawLevel(level) {
   // background
   image(backgrounds[level], canvasWidth / 2 + backgroundOffset.x, canvasHeight / 2 + backgroundOffset.y, backgroundSize.width, backgroundSize.height);
   // console.log(canvasWidth / 2 + backgroundOffset.x);
-  player.display();
+  player.display(directions, backgroundOffset, backgroundSize, canvas, placeFree);
 
   foregroundObjects.forEach((fg, i) => {
     let x = canvasWidth / 2 + backgroundOffset.x + (fg.offsetXTiles * spaceSize);
@@ -441,29 +438,24 @@ function keyPressed() {
         canvasHeight,
         multiplier
       });
+    fightSKeyPressed(keyCode, fights[currentFight]);
   }
 
-  if (keyCode === UP_ARROW) {
-    if (state === 0) {
-      up = 1;
+  if (state === 0) {
+    if (keyCode === UP_ARROW) {
+      directions.up = 1;
       player.graphicType = 3;
     }
-  }
-  if (keyCode === DOWN_ARROW) {
-    if (state === 0) {
-      down = 1;
+    if (keyCode === DOWN_ARROW) {
+      directions.down = 1;
       player.graphicType = 0;
     }
-  }
-  if (keyCode === LEFT_ARROW) {
-    if (state === 0) {
-      left = 1;
+    if (keyCode === LEFT_ARROW) {
+      directions.left = 1;
       player.graphicType = 1;
     }
-  }
-  if (keyCode === RIGHT_ARROW) {
-    if (state === 0) {
-      right = 1;
+    if (keyCode === RIGHT_ARROW) {
+      directions.right = 1;
       player.graphicType = 2;
     }
   }
@@ -522,16 +514,16 @@ function keyPressed() {
 
 function keyReleased() {
   if (keyCode === UP_ARROW) {
-    up = 0;
+    directions.up = 0;
   }
   if (keyCode === DOWN_ARROW) {
-    down = 0;
+    directions.down = 0;
   }
   if (keyCode === LEFT_ARROW) {
-    left = 0;
+    directions.left = 0;
   }
   if (keyCode === RIGHT_ARROW) {
-    right = 0;
+    directions.right = 0;
   }
   if (keyCode === 65) {
   }
@@ -544,153 +536,6 @@ window.setup = setup;
 window.draw = draw;
 window.keyPressed = keyPressed;
 window.keyReleased = keyReleased;
-
-class Character {
-  constructor(x, y) {
-    this.xPos = x;
-    this.yPos = y;
-    this.size = 50;
-    this.speed = 3;
-    this.hitPoints = 40;
-    this.hitUpgrade = 1;
-    this.maxHp = 1000;
-    this.hp = 1000;
-    this.shooting = false;
-    this.level = 0
-    this.facingDirection = 0;
-    this.xDirection = 0;
-    this.yDirection = 0;
-    this.graphicType = 0; // 0 is forward, 1 is left, 2 is right, 3 is back
-    this.graphicFrame = 0;
-    this.graphicDelay = 8;
-    this.graphic = characterSprites[0][0];
-    this.characterOffsetX = 0;
-    this.characterOffsetY = 0;
-    this.xp = 0;
-    this.disabled = false;
-    this.moving = false;
-    this.bgMoving = true;
-  }
-
-  display() {
-    if (!this.disabled) {
-      this.move();
-      this.graphic = characterSprites[this.graphicType][this.graphicFrame];
-    }
-    image(this.graphic, canvasWidth / 2 + this.characterOffsetX, canvasHeight / 2 + this.characterOffsetY, 40, 60);
-  }
-
-  updateGraphicType(newGraphicType) {
-    if (this.xDirection > 0) {
-      this.graphicType = 2;
-    } else if (this.xDirection < 0) {
-      this.graphicType = 1;
-    } else if (this.yDirection < 0) {
-      this.graphicType = 3;
-    } else if (this.yDirection > 0) {
-      this.graphicType = 0;
-    }
-  }
-
-  calculateDirection() {
-    this.xDirection = right - left;
-    this.yDirection = down - up;
-  }
-
-  move() {
-    this.calculateDirection();
-    this.updatePositions();
-    // console.log("x: " + this.xPos + "y: " + this.yPos);
-  }
-
-  getNewXPosition() {
-    let multiplier = 0;
-    if (this.graphicType === 1) {
-      multiplier = spaceSize * -1;
-    } else if (this.graphicType === 2) {
-      multiplier = spaceSize;
-    }
-    return this.xPos + multiplier;
-  }
-
-  getNewYPosition() {
-    let multiplier = 0;
-    if (this.graphicType === 3) {
-      multiplier = spaceSize * -1;
-    } else if (this.graphicType === 0) {
-      multiplier = spaceSize;
-    }
-    return this.yPos + multiplier;
-  }
-
-  updatePositions() {
-    const newBackgroundOffset = {
-      x: backgroundOffset.x + this.speed * this.xDirection * -1,
-      y: backgroundOffset.y + this.speed * this.yDirection * -1,
-    };
-    if (this.xDirection != 0) {
-      if (placeFree(this.xPos + this.speed * this.xDirection, this.yPos) &&
-        placeFree(this.xPos + (this.speed + 20) * this.xDirection, this.yPos)) {
-        this.updateGraphic();
-        this.moving = true;
-        if (this.characterOffsetX != 0 ||
-          backgroundSize.width / 2 + newBackgroundOffset.x < canvasWidth / 2 ||
-          backgroundSize.width / 2 - newBackgroundOffset.x < canvasWidth / 2) {
-          this.xPos += this.speed * this.xDirection;
-          this.characterOffsetX += this.speed * this.xDirection;
-          this.bgMoving = false;
-        } else {
-          backgroundOffset.x = newBackgroundOffset.x;
-          this.xPos = backgroundSize.width / 2 - backgroundOffset.x;
-          this.bgMoving = true;
-        }
-      } else {
-        this.stop();
-      }
-    } else if (this.yDirection != 0) {
-      if (placeFree(this.xPos, this.yPos + this.speed * this.yDirection) &&
-        placeFree(this.xPos, this.yPos + (this.speed + 15) * this.yDirection)) {
-        this.updateGraphic();
-        this.moving = true;
-        if (this.characterOffsetY != 0 ||
-          backgroundSize.height / 2 + newBackgroundOffset.y < canvasHeight / 2 ||
-          backgroundSize.height / 2 - newBackgroundOffset.y < canvasHeight / 2) {
-          this.yPos += this.speed * this.yDirection;
-          this.characterOffsetY += this.speed * this.yDirection;
-          this.bgMoving = false;
-        } else {
-          backgroundOffset.y = newBackgroundOffset.y;
-          this.yPos = backgroundSize.height / 2 - backgroundOffset.y;
-          this.bgMoving = true;
-        }
-      } else {
-        this.stop();
-      }
-    } else {
-      this.stop();
-    }
-  }
-
-  stop() {
-    this.graphicFrame = 0;
-    this.moving = false;
-    this.bgMoving = false;
-    this.xPos
-  }
-
-  updateGraphic() {
-    this.graphicDelay--;
-    if (this.graphicDelay === 0) {
-      this.graphicFrame = (this.graphicFrame + 1) % 4;
-      this.graphicDelay = 8;
-    }
-  }
-
-  distance(monster) {
-    return Math.sqrt(Math.pow(monster.xPos - this.xPos, 2) + Math.pow(monster.yPos - this.yPos, 2));
-  }
-}
-
 
 class MapData {
   constructor(bgWidth, bgHeight, startPosX, startPosY) {

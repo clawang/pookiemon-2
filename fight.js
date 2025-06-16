@@ -383,7 +383,9 @@ export function fightAKeyPressed(keyCode, fight, props) {
                 break;
         }
     }
+}
 
+export function fightSKeyPressed(keyCode, fight) {
     // S
     if (keyCode === 83) {
         if (fight.fightScreen === 2) {
