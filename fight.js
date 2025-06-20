@@ -386,13 +386,16 @@ export function fightAKeyPressed(keyCode, fight, props) {
                 if (!fight.openFight.started && fight.pookiemonEntranceStage > 1) {
                     advanceTextStep(fight, props.typeWriterProps);
                     if (fight.textStep === 1) {
+                        if (fight.pookiemonEntranceStage < 3) {
+                            props.sounds.pokeballSound.play();
+                        }
                         fight.pookiemonEntranceStage = 3;
-                        props.sounds.pokeballSound.play();
                     }
                     if (fight.textStep > 1) {
                         fight.fightScreen = 1;
                         fight.textStep = 0;
-                    } else {
+                    }
+                    if(!props.typeWriterProps.buttonLocked) {
                         props.sounds.clickSound.play();
                     }
                 }
@@ -431,7 +434,7 @@ export function fightAKeyPressed(keyCode, fight, props) {
                     if (fight.textStep > fight.getCurrentMove().text.length) {
                         fight.enemy.startAttackAnimation({ sounds: props.sounds, movePower: fight.getCurrentMove().power, fight });
                     }
-                    props.sounds.clickSound.play();
+                    if(!props.typeWriterProps.buttonLocked) props.sounds.clickSound.play();
                 }
                 break;
             case 4:
@@ -448,7 +451,7 @@ export function fightAKeyPressed(keyCode, fight, props) {
                         fight.textStep = 0;
                         fight.cursorIndex = [0, 0];
                     }
-                    props.sounds.clickSound.play();
+                    if(!props.typeWriterProps.buttonLocked) props.sounds.clickSound.play();
                 }
                 break;
             case 5:
@@ -469,7 +472,7 @@ export function fightAKeyPressed(keyCode, fight, props) {
                         }
                         fight.textStep = 0;
                     }
-                    props.sounds.clickSound.play();
+                    if(!props.typeWriterProps.buttonLocked) props.sounds.clickSound.play();
                 }
                 break;
             case 6:
@@ -484,7 +487,7 @@ export function fightAKeyPressed(keyCode, fight, props) {
                     fight.currentEnemyMove++;
                     fight.enemy.hpAnimation.ended = false;
                     fight.textStep = 0;
-                    props.sounds.clickSound.play();
+                    if(!props.typeWriterProps.buttonLocked) props.sounds.clickSound.play();
                 }
                 break;
             // happy ending

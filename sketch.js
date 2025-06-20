@@ -70,6 +70,7 @@ const trainers = [
     image: {},
     coords: [[3, 14], [4, 14]],
     text: [
+      "Are you ready?",
       "It's now or never."
     ],
     fight: 2
@@ -423,7 +424,7 @@ function drawLevel(level) {
   
   // trainers
   if (level === 0) {
-    displayWithOffset(trainers[game.activeTrainer].image, canvasSize.width / 2 + backgroundOffset.x, canvasSize.height / 2 + backgroundOffset.y);
+    image(trainers[game.activeTrainer].image, canvasSize.width / 2 + backgroundOffset.x, canvasSize.height / 2 + backgroundOffset.y, backgroundSize.width, backgroundSize.height);
   }
 
   player.display(directions, backgroundOffset, backgroundSize, canvasSize, tileMap);
