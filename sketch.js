@@ -1,96 +1,79 @@
-import { Fight, Contender, Move, drawFight, fightArrowKeyPressed, fightAKeyPressed, fightSKeyPressed } from './fight.js';
+import {
+  Fight,
+  Contender,
+  Move,
+  drawFight,
+  fightArrowKeyPressed,
+  fightAKeyPressed,
+  fightSKeyPressed,
+  battleStartAnimation
+} from './fight.js';
 import { typeWriter } from "./text.js";
 import { Character } from "./character.js";
+import { tileMaps, MapData } from './maps.js';
 
 //game variables
-const canvasWidth = 800;
-const canvasHeight = 533;
-const spaceSize = 34;
-const multiplier = canvasWidth / 2378;
+const canvasSize = {
+  width: 800,
+  height: 533,
+};
+const spaceSize = {
+  width: 16 * 2,
+  height: 12 * 2,
+};
+const multiplier = canvasSize.width / 2378;
 let player;
 let logo;
 let version;
 let font;
 let font2;
-const canvas = {
-  width: 800,
-  height: 533,
-};
 
 //level drawing variables
-const tileMaps = [];
-tileMaps[0] = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1, 0, 1, 1, 2, 1, 0, 1, 2, 1, 1, 1, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 2, 2, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 2, 2, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 2, 0, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 2, 1, 1, 1, 1, 0, 0, 2, 0, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-];
-
 let tileMap = tileMaps[0];
 const backgrounds = [];
+const overlays = [];
 var mapVariables = [];
-const foregroundObjects = [
+const trainers = [
   {
-    fileName: "car-1.png",
+    fileName: "trainer-2.png",
     image: {},
-    widthTiles: 3,
-    heightTiles: 2,
-    offsetXTiles: -5.5,
-    offsetYTiles: 0.5
+    coords: [[9, 19], [10, 19]],
+    text: ["Are you ready for the hardest fight of your life?"],
+    fight: 0
   },
   {
-    fileName: "house-1.png",
+    fileName: "trainer-3.png",
     image: {},
-    widthTiles: 8,
-    heightTiles: 6,
-    offsetXTiles: 1,
-    offsetYTiles: 1.5
+    coords: [[13, 9], [14, 9]],
+    text: [
+      "Claire is so glad she gave you a chance after the first date.",
+      "Even though you blacked out and failed the bar exam."
+    ],
   },
   {
-    fileName: "house-2.png",
+    fileName: "trainer-1.png",
     image: {},
-    widthTiles: 6,
-    heightTiles: 5,
-    offsetXTiles: 5,
-    offsetYTiles: -6
+    coords: [[19, 21]],
+    text: ["Ready for round 2?"],
+    fight: 1
   },
   {
-    fileName: "house-3.png",
+    fileName: "trainer-4.png",
     image: {},
-    widthTiles: 8,
-    heightTiles: 7,
-    offsetXTiles: -6,
-    offsetYTiles: -7
+    coords: [[27, 8], [28, 8]],
+    text: [
+      "You could've fought me if you remembered to sign up on time."
+    ]
   },
   {
-    fileName: "gate.png",
+    fileName: "gym-leader.png",
     image: {},
-    widthTiles: 5,
-    heightTiles: 2,
-    offsetXTiles: -0.5,
-    offsetYTiles: -4.5
-  }
+    coords: [[3, 14], [4, 14]],
+    text: [
+      "It's now or never."
+    ],
+    fight: 2
+  },
 ];
 
 let backgroundSize;
@@ -99,6 +82,8 @@ let backgroundOffset;
 
 let sounds = {
   levelSound: null,
+  gymIntro: null,
+  gymLoop: null,
   battleSound: null,
   battleLoop: null,
   clickSound: null,
@@ -107,37 +92,34 @@ let sounds = {
   pokeballSound: null,
   attackSound: null,
   getItemSoundDone: false,
+  doorSound: null,
 };
 
 //other stuff
-let level = 0;
-let state = -1; //-1 is start screen, 0 is map, 1 is fight, 2 is game over
-let screenIndex = -1;
-let screenInterval = 100;
-let screenColors = {
-  0: 'rgba(255, 0, 0',
-  1: 'rgba(0, 255, 0',
-  2: 'rgba(255, 255, 0',
-  3: 'rgba(0, 0, 255',
-  4: 'rgba(255, 255, 255'
-}
+const game = {
+  state: -1, //-1 is start screen, 0 is map, 1 is fight, 2 is white out, 3 is game over
+  level: 0,
+  currentFight: 0,
+  activeTrainer: 0,
+  map: 1,
+};
 
 let transition = {
   started: false,
   direction: 0,
   timer: 0,
   type: 0,
-  count: 0
+  count: 0,
+  callback: null,
 };
 
 let textBubble2;
-let speechIndex = -1;
-let speeches = [
-  ["Claire really loves you, you know.", "She spent hours and hours working on this game.", "She'll kill herself if you don't like it."],
-  ["I heard it's your and Claire's first anniversary?", "Congrats, man!"],
-  ["Woah that car over there looks terrible!"],
-  ["LITTLEROOT TOWN"]
-];
+let speech = {
+  textStep: 0,
+  words: [],
+  started: false,
+  callback: () => { }
+};
 let typeWriterProps = {
   currentCharacter: 0,
   buttonLocked: false
@@ -153,10 +135,7 @@ let directions = {
 
 // fight sequence variables
 let fights;
-let currentFight = 0;
-
-let textStep = 0;
-let fightCar;
+let barExam;
 let abeBack;
 let abeSprite;
 
@@ -169,11 +148,14 @@ function preload() {
   logo = loadImage("assets/images/pookiemon.png");
   version = loadImage("assets/images/version.png");
 
-  backgrounds[0] = loadImage("assets/images/littleroot-grid.png");
-  backgrounds[1] = loadImage("assets/images/battle-screen-1.png");
+  backgrounds[0] = loadImage("assets/images/pokemon-gym.png");
+  backgrounds[1] = loadImage("assets/images/gym-entrance.png");
 
-  foregroundObjects.forEach(fg => {
-    fg.image = loadImage(`assets/images/${fg.fileName}`);
+  overlays[0] = loadImage("assets/images/gym-overlay.png");
+  overlays[1] = loadImage("assets/images/gym-entrance-overlay.png");
+
+  trainers.forEach(trainer => {
+    trainer.image = loadImage(`assets/images/${trainer.fileName}`);
   });
 
   // character sprites
@@ -196,12 +178,13 @@ function preload() {
   player.characterSprites[3][3] = loadImage("assets/images/character-sprites/back-3.png");
 
   textBubble2 = loadImage("assets/images/text-bubble2.png");
-  fightCar = loadImage("assets/images/car-battle.png");
+  barExam = loadImage("assets/images/barexam.png");
   abeBack = loadImage("assets/images/abe-back.png");
   abeSprite = loadImage("assets/images/sprite.png");
 
   //sounds
-  sounds.levelSound = loadSound("assets/sounds/littleroot-town.mp3");
+  sounds.gymIntro = loadSound("assets/sounds/gym-theme-intro.mp3");
+  sounds.gymLoop = loadSound("assets/sounds/gym-theme-loop.mp3");
   sounds.battleSound = loadSound("assets/sounds/battle-intro.mp3");
   sounds.battleLoop = loadSound("assets/sounds/battle-loop.mp3");
   sounds.clickSound = loadSound("assets/sounds/click.mp3");
@@ -209,47 +192,106 @@ function preload() {
   sounds.faintSound = loadSound("assets/sounds/faint.mp3");
   sounds.pokeballSound = loadSound("assets/sounds/exit-ball.mp3");
   sounds.attackSound = loadSound("assets/sounds/attack.mp3");
+  sounds.doorSound = loadSound("assets/sounds/door.mp3");
 
   fights = [
     new Fight(
       new Contender(
         abeBack,
         'ABRAHAM',
-        25,
-        5,
+        74,
+        477,
+        30,
         abeSprite
       ),
       new Contender(
-        fightCar,
-        'SHITTY USED CAR',
+        barExam,
+        'CA BAR EXAM',
+        100,
+        470
       ),
       [
         [
-          new Move('SHOW GF', 'BOYFRIEND', 1),
-          new Move('YELL TO OWNER', 'EXTROVERT', 1),
+          new Move('SLACK OFF', 'NORMAL', 1, 50, 0, [
+          ]),
+        ],
+        []
+      ],
+      [new Move('NATURAL CONSEQUENCES', 'KARMA', 1, 500, 2, [])],
+      canvasSize
+    ),
+    new Fight(
+      new Contender(
+        abeBack,
+        'ABRAHAM',
+        143,
+        477,
+        60,
+        abeSprite
+      ),
+      new Contender(
+        barExam,
+        'CA BAR EXAM',
+        100,
+        470
+      ),
+      [
+        [
+          new Move('STUDY', 'LAWYER', 10, 100, 2, []),
+          new Move('ADDERALL', 'ADHD', 10, 100, 2, []),
+        ],
+        []
+      ],
+      [
+        new Move('HIGH MINIMUM PASSING SCORE', 'DIFFICULT', 1, 117, 0, []),
+        new Move('KIDNEY STONE', 'STRESS', 1, 360, 2, [])
+      ],
+      canvasSize
+    ),
+    new Fight(
+      new Contender(
+        abeBack,
+        'ABRAHAM',
+        182,
+        475,
+        80,
+        abeSprite
+      ),
+      new Contender(
+        barExam,
+        'CA BAR EXAM',
+        100,
+        473
+      ),
+      [
+        [
+          new Move("CLAIRE'S SUPPORT", 'BOYFRIEND', 1, 150, 2, []),
+          new Move('ADDERALL', 'ADHD', 10, 120, 2, []),
         ],
         [
-          new Move('EXAMINE', 'MECHANIC', 1),
-          new Move('HAGGLE', 'SKEEZE', 1)
+          new Move('EXTENDED TIME', 'ADHD', 1, 120, 2, []),
+          new Move('LOCK IN', 'LAWYER', 10, 120, 2, []),
         ]
       ],
-      canvasWidth,
-      canvasHeight
+      [
+        new Move('BUSINESS ASSOCIATIONS', 'DIFFICULT', 1, 117, 0, []),
+        new Move('CIVIL PROCEDURE', 'DIFFICULT', 1, 117, 0, []),
+        new Move('REMEDIES', 'DIFFICULT', 1, 118, 0, []),
+        new Move('REAL PROPERTY', 'DIFFICULT', 1, 118, 0, []),
+        new Move('PROFESSIONAL RESPONSIBILITY', 'DIFFICULT', 1, 118, 0, []),
+      ],
+      canvasSize
     )
   ];
 }
 
 function setup() {
   getAudioContext().suspend();
-  let canvas = createCanvas(canvasWidth, canvasHeight);
+  let canvas = createCanvas(canvasSize.width, canvasSize.height);
   canvas.parent('game-container');
 
-  mapVariables[0] = new MapData(1156, 850, 578, 335);
-  backgroundOffset = mapVariables[level].backgroundOffset;
-  backgroundSize = mapVariables[level].backgroundSize;
-  startPos = mapVariables[level].startPos;
-  player.xPos = startPos.x;
-  player.yPos = startPos.y;
+  mapVariables[0] = new MapData(480 * 2, 384 * 2, 240 * 2, 745, { x: -18, y: -115 }, {x: 0, y: 237});
+  mapVariables[1] = new MapData(176 * 2, 144 * 2, 176, 258, {x: 0, y: 0}, {x: 0, y: 114}); //114
 }
 
 function draw() {
@@ -257,191 +299,242 @@ function draw() {
   noStroke();
 
   // start screen
-  if (state === -1) {
-    imageMode(CORNER);
-    const grad = drawingContext.createLinearGradient(0, 0, 0, 563);
-    grad.addColorStop(0, "#00489d");
-    grad.addColorStop(1, "#0a9768");
-    drawingContext.fillStyle = grad;
-    rect(0, 0, canvasWidth, canvasHeight);
-    textAlign(CENTER);
-    imageMode(CENTER);
-    image(logo, canvasWidth / 2, 180, 600, 474);
-    image(version, canvasWidth / 2, 300, 350, 350 * 564 / 1638);
-    textSize(20)
-    fill(125 + sin(frameCount * 0.1) * 125);
-    textFont(font2)
-    text("PRESS SPACE TO START", canvasWidth / 2, 470)
-    fill(255)
-    textFont(font)
-
-    if (keyIsDown(32)) {
-      state = 0;
-      userStartAudio();
-      sounds.levelSound.play();
-    }
-  } else if (state === 0) {
-    tileMap = tileMaps[0];
-    drawLevel(0);
-  } else if (state === 1) {
-    drawFirstFight();
-  } else if (state === 2) {
+  if (game.state === -1) {
+    drawStartScreen();
+  } else if (game.state === 0) {
+    tileMap = tileMaps[game.map];
+    drawLevel(game.map);
+  } else if (game.state === 1) {
+    drawFight(canvasSize, multiplier, font, fights[game.currentFight], typeWriterProps);
+  } else if (game.state === 2) {
+    drawBlackOut();
+  } else if (game.state === 3) {
     drawGameOver();
   }
 
-  if (screenIndex >= 0 && screenInterval > 0) {
-    let str = screenColors[screenIndex] + ',' + (screenInterval / 100) + ')';
-    let c = color(str);
-    fill(c);
-    rect(0, 0, 1000, 500);
-    screenInterval--;
-  }
-
   if (transition.started) {
-    let alpha = map(transition.timer, 0, 100, 0, 255);
-
     if (transition.type === 0) {
-      transition.timer -= 10;
-      fill(87, 97, 90, transition.direction > 0 ? alpha : 255 - alpha);
+      battleFlashAnimation();
     } else if (transition.type === 1) {
-      transition.timer -= 2;
-      fill(0, transition.direction > 0 ? alpha : 255 - alpha);
-    }
-    rect(0, 0, canvasWidth, canvasHeight);
-    if (transition.timer <= 0 && transition.direction === 0) {
-      transition.timer = 100;
-      transition.direction = 1;
-      if (state === 1) {
-        state = 2;
-      } else if (state === 0 && transition.count >= 3) {
-        state = 1;
-        fights[currentFight].openFight.started = true;
-        transition.started = false;
-      }
-    }
-    if (transition.timer <= 0 && transition.direction === 1) {
-      if (transition.type === 0) {
-        transition.count++;
-        transition.timer = 100;
-        transition.direction = 0;
-        if (transition.count >= 3) {
-          transition.type = 1;
-          // transition = false;
-          // transition.count = 0;
-        }
-      } else {
-        transition.started = false;
-      }
+      fade(0); //fade out
+    } else if (transition.type === 2) {
+      fade(1); //fade in
     }
   }
 
-  if (fights[currentFight].openFight.started) {
-    fill(0);
-    rect(0, 0 - fights[currentFight].openFight.count, canvasWidth, canvasHeight / 2);
-    rect(0, canvasHeight / 2 + fights[currentFight].openFight.count, canvasWidth, canvasHeight / 2);
-    fights[currentFight].openFight.increment();
+  // open fight animation
+  battleStartAnimation(fights[game.currentFight], canvasSize);
+}
+
+function startTransition(timer, type, callbackFn) {
+  if (!transition.started) {
+    transition.started = true;
+    transition.timer = timer;
+    transition.direction = 0;
+    transition.type = type;
+    transition.count = 0;
+    transition.callback = callbackFn;
+    player.disabled = true;
+    typeWriterProps.buttonLocked = true;
   }
 }
+
+function fade(direction) {
+  let alpha = map(transition.timer, 0, 100, 0, 255);
+  transition.timer -= 2;
+  fill(0, direction > 0 ? alpha : 255 - alpha);
+  rect(0, 0, canvasSize.width, canvasSize.height);
+
+  if (transition.timer <= 0) {
+    transition.started = false;
+    player.disabled = false;
+    typeWriterProps.buttonLocked = false;
+    if (transition.callback) transition.callback();
+  }
+}
+
+function battleFlashAnimation() {
+  let alpha = map(transition.timer, 0, 100, 0, 255);
+  transition.timer -= 10;
+  fill(87, 97, 90, transition.direction > 0 ? alpha : 255 - alpha);
+  rect(0, 0, canvasSize.width, canvasSize.height);
+
+  // fade out
+  if (transition.timer <= 0 && transition.direction === 0) {
+    transition.timer = 100;
+    transition.direction = 1;
+  }
+
+  // fade in
+  if (transition.timer <= 0 && transition.direction === 1) {
+    transition.count++;
+    transition.timer = 100;
+    transition.direction = 0;
+    if (transition.count >= 3) {
+      transition.started = false;
+      player.disabled = false;
+      typeWriterProps.buttonLocked = false;
+      transition.callback()
+    }
+  }
+}
+
+function displayWithOffset(imageSrc, width, height) {
+  let x = width;
+  let y = height;
+  if (player.xDirection < 0 && player.bgMoving) {
+    x -= player.speed;
+  } else if (player.xDirection > 0 && player.bgMoving) {
+    x += player.speed;
+  } else if (player.yDirection < 0 && player.bgMoving) {
+    y -= player.speed;
+  } else if (player.yDirection > 0 && player.bgMoving) {
+    y += player.speed;
+  }
+  image(imageSrc, x, y, backgroundSize.width, backgroundSize.height);
+}
+
+function drawStartScreen() {
+  imageMode(CORNER);
+  const grad = drawingContext.createLinearGradient(0, 0, 0, 563);
+  grad.addColorStop(0, "#7196d9");
+  grad.addColorStop(0.2, "#7196d9");
+  grad.addColorStop(1, "#ffcce3");
+  drawingContext.fillStyle = grad;
+  rect(0, 0, canvasSize.width, canvasSize.height);
+  textAlign(CENTER);
+  imageMode(CENTER);
+  image(logo, canvasSize.width / 2, 180, 600, 474);
+  image(version, canvasSize.width / 2 + 20, 300, 350, 350 * 564 / 1638);
+  textSize(20)
+  fill(125 + sin(frameCount * 0.1) * 125);
+  textFont(font2)
+  text("PRESS SPACE TO START", canvasSize.width / 2, 470)
+  fill(255)
+  textFont(font);
+}
+
 
 function drawLevel(level) {
   //some variables
   imageMode(CENTER);
   // background
-  image(backgrounds[level], canvasWidth / 2 + backgroundOffset.x, canvasHeight / 2 + backgroundOffset.y, backgroundSize.width, backgroundSize.height);
-  // console.log(canvasWidth / 2 + backgroundOffset.x);
-  player.display(directions, backgroundOffset, backgroundSize, canvas, placeFree);
+  image(backgrounds[level], canvasSize.width / 2 + backgroundOffset.x, canvasSize.height / 2 + backgroundOffset.y, backgroundSize.width, backgroundSize.height);
+  
+  // trainers
+  if (level === 0) {
+    displayWithOffset(trainers[game.activeTrainer].image, canvasSize.width / 2 + backgroundOffset.x, canvasSize.height / 2 + backgroundOffset.y);
+  }
 
-  foregroundObjects.forEach((fg, i) => {
-    let x = canvasWidth / 2 + backgroundOffset.x + (fg.offsetXTiles * spaceSize);
-    let y = canvasHeight / 2 + backgroundOffset.y + fg.offsetYTiles * spaceSize;
-    if (player.xDirection < 0 && player.bgMoving) {
-      x -= player.speed;
-    } else if (player.xDirection > 0 && player.bgMoving) {
-      x += player.speed;
-    } else if (player.yDirection < 0 && player.bgMoving) {
-      y -= player.speed;
-    } else if (player.yDirection > 0 && player.bgMoving) {
-      y += player.speed;
-    }
-    image(fg.image, x, y, fg.widthTiles * spaceSize, fg.heightTiles * spaceSize);
-  });
+  player.display(directions, backgroundOffset, backgroundSize, canvasSize, tileMap);
+  // background overlay
+  displayWithOffset(overlays[level], canvasSize.width / 2 + backgroundOffset.x, canvasSize.height / 2 + backgroundOffset.y);
+  if (level === 1) {
+    rectMode(CENTER)
+    fill(0, 0, 0);
+    rect(canvasSize.width / 2, canvasSize.height / 2 - 97 - 72, 100, 50);
+    rectMode(CORNER)
+  }
 
-  if (speechIndex >= 0) {
+  if (speech.started) {
     imageMode(CORNER);
-    image(textBubble2, 0, 1130 * multiplier, canvasWidth, 462 * multiplier);
+    image(textBubble2, 0, 1130 * multiplier, canvasSize.width, 462 * multiplier);
     textAlign(LEFT);
     textFont(font);
     textSize(40);
     fill(0);
-    let displayText = typeWriter(speeches[speechIndex][textStep], typeWriterProps);
+    let displayText = typeWriter(speech.words[speech.textStep], typeWriterProps);
     text(displayText, 150 * multiplier, 1303 * multiplier, 2000 * multiplier);
-    player.disabled = true;
   } else {
     player.disabled = false;
   }
+
+  let xTile = Math.floor(player.getNewXPosition() / spaceSize.width);
+  let yTile = Math.floor(player.getNewYPosition() / spaceSize.height);
+  if (level === 1 && yTile <= 1 && xTile === 5) {
+    if (!transition.started) sounds.doorSound.play();
+    startTransition(100, 1, () => {
+      game.map = 0;
+      setUpMap();
+      startTransition(100, 2);
+    });
+  }
 }
 
-function drawFirstFight() {
-  drawFight(canvasWidth, canvasHeight, multiplier, font, fights[currentFight], typeWriterProps);
+function drawBlackOut() {
+  rectMode(CORNER);
+  fill(0);
+  rect(0, 0, canvasSize.width, canvasSize.height);
+  textAlign(CENTER);
+  textFont(font);
+  textSize(60);
+  fill(255);
+  textSize(30);
+  text("You whited out!", canvasSize.width / 2, 250);
+  text("Better luck next time", canvasSize.width / 2, 285);
 }
 
 function drawGameOver() {
   rectMode(CORNER);
   fill(0);
-  rect(0, 0, canvasWidth, canvasHeight);
+  rect(0, 0, canvasSize.width, canvasSize.height);
   textAlign(CENTER);
   textFont(font);
   textSize(60);
   fill(255);
-  text("GAME OVER", canvasWidth / 2, 200);
+  text("HAPPY ANNIVERSARY", canvasSize.width / 2, 200);
+  text("TO MY FAVORITE ATTORNEY", canvasSize.width / 2, 250);
   textSize(30);
-  text("Made with love by Claire <3", canvasWidth / 2, 250);
+  text("Made with love by Claire <3", canvasSize.width / 2, 300);
 }
 
-function collision(r1, r2) {
-  if (r1.xPos + r1.size > r2.xPos &&
-    r1.xPos < r2.xPos + r2.size &&
-    r2.yPos + r2.size > r1.yPos &&
-    r2.yPos < r1.yPos + r1.size) {
-    return true;
-  } else {
-    return false;
-  }
-};
+function updateActiveTrainer() {
+  trainers[game.activeTrainer].coords.map(coord => {
+    tileMaps[0][coord[0]][coord[1]] = 0;
+  });
+  game.activeTrainer++;
+  trainers[game.activeTrainer].coords.map(coord => {
+    tileMaps[0][coord[0]][coord[1]] = 2;
+  });
 
-function placeFree(xNew, yNew) {
-  if (xNew < 0 || xNew > backgroundSize.width || yNew < 0 || yNew > backgroundSize.height) {
-    return false;
-  }
-  let xTile = Math.floor(xNew / spaceSize);
-  let yTile = Math.floor(yNew / spaceSize);
-
-  let tileIndex = tileMap[yTile][xTile];
-  if (tileIndex > 0) {
-    return false;
-  }
-  return true;
 }
 
-function randomNumber(min, max) {
-  return Math.floor(Math.random() * (max - min) + min);
+function startSpeech(words, callback) {
+  speech.words = words;
+  speech.started = true;
+  player.disabled = true;
+
+  if (callback) {
+    speech.callback = callback;
+  }
+}
+
+function endSpeech() {
+  speech.textStep = 0;
+  speech.words = [];
+  speech.started = false;
+  typeWriterProps.currentCharacter = 0;
+  speech.callback();
+  speech.callback = () => { };
 }
 
 function keyPressed() {
-  if (state === 1) {
-    fightArrowKeyPressed(keyCode, fights[currentFight], { sounds });
-    fightAKeyPressed(keyCode, fights[currentFight],
+  if (game.state === 1) {
+    fightArrowKeyPressed(keyCode, fights[game.currentFight], { sounds });
+    fightAKeyPressed(keyCode, fights[game.currentFight],
       {
         typeWriterProps,
         sounds,
-        transition,
-        canvasHeight,
-        multiplier
+        startTransition,
+        canvasSize,
+        multiplier,
+        game,
+        updateActiveTrainer
       });
-    fightSKeyPressed(keyCode, fights[currentFight]);
+    fightSKeyPressed(keyCode, fights[game.currentFight]);
   }
 
-  if (state === 0) {
+  if (game.state === 0) {
     if (keyCode === UP_ARROW) {
       directions.up = 1;
       player.graphicType = 3;
@@ -459,58 +552,98 @@ function keyPressed() {
       player.graphicType = 2;
     }
   }
+
   // A
   if (keyCode === 65) {
     if (!typeWriterProps.buttonLocked) {
-      if (state === 0) {
-        if (speechIndex >= 0) {
-          textStep++;
+      if (game.state === 0) {
+        let xTile = Math.floor(player.getNewXPosition() / spaceSize.width);
+        let yTile = Math.floor(player.getNewYPosition() / spaceSize.height);
+
+        if (speech.started) {
+          speech.textStep++;
           typeWriterProps.currentCharacter = 0;
-          if (textStep >= speeches[speechIndex].length) {
-            textStep = 0;
-            speechIndex = -1;
-            typeWriterProps.currentCharacter = 0;
+          if (speech.textStep >= speech.words.length) {
+            endSpeech();
           } else {
             sounds.clickSound.play();
           }
-        } else {
-          let xTile = Math.floor(player.getNewXPosition() / spaceSize);
-          let yTile = Math.floor(player.getNewYPosition() / spaceSize);
+        } else if (game.map === 0) {
           // console.log(xTile, yTile);
           // console.log(tileMap[yTile][xTile]);
           if (tileMap[yTile][xTile] === 2) { // interactive tile
-            if (xTile >= 10 && xTile <= 13 &&
-              yTile >= 11 && yTile <= 14 && !transition.started) {
-              transition.started = true;
-              transition.timer = 100;
-              transition.direction = 0;
-              sounds.levelSound.stop();
-              sounds.battleSound.play();
-              sounds.battleSound.onended(() => sounds.battleLoop.loop());
-            } else if (xTile === 23 &&
-              yTile >= 10 && yTile <= 11) { // npc 1
-              speechIndex = 0;
-              sounds.clickSound.play();
-            } else if (xTile === 23 &&
-              yTile >= 15 && yTile <= 16) { // npc 2
-              speechIndex = 1;
-              sounds.clickSound.play();
-            } else if (xTile === 14 &&
-              yTile >= 1 && yTile <= 2) { // npc 3
-              speechIndex = 2;
-              sounds.clickSound.play();
-            } else if (xTile === 17 && yTile === 8) { // town sign
-              speechIndex = 3;
+            const currentActiveTrainer = trainers[game.activeTrainer];
+            if ((currentActiveTrainer.coords[0][0] === yTile &&
+              currentActiveTrainer.coords[0][1] === xTile) ||
+              (currentActiveTrainer.coords.length > 1 &&
+                currentActiveTrainer.coords[1][1] === xTile &&
+                currentActiveTrainer.coords[1][0] === yTile)) {
+              startSpeech(currentActiveTrainer.text, () => {
+                if (currentActiveTrainer.hasOwnProperty('fight')) {
+                  if (!transition.started) {
+                    sounds.gymLoop.stop();
+                    sounds.gymIntro.onended(() => sounds.gymLoop.stop());
+                    sounds.gymIntro.stop();
+                    sounds.battleSound.play();
+                    sounds.battleSound.onended(() => sounds.battleLoop.loop());
+                  }
+                  startTransition(100, 0, () => {
+                    startTransition(100, 1, () => {
+                      game.state = 1;
+                      fights[game.currentFight].openFight.started = true;
+                    });
+                  });
+                } else {
+                  startTransition(100, 1, () => {
+                    updateActiveTrainer();
+                    startTransition(100, 2, () => {});
+                  });
+                }
+              });
               sounds.clickSound.play();
             }
           }
+        } else if (game.map === 1) {
+          if ((yTile === 8 || yTile === 9) && xTile === 3) {
+            sounds.clickSound.play();
+            startSpeech([
+              "Happy 2 year anniversary!",
+              "Welcome to the Attorney Gym.",
+              "This gym will be a celebration of you and Claire's past two years together.",
+              "You need to find all the trainers in order to fight the gym leader.",
+              "Good luck!"
+            ]);
+          }
         }
+      } else if (game.state === 2) {
+        game.state = 0;
+        startTransition(100, 2, () => {
+          sounds.gymIntro.play();
+          sounds.gymIntro.onended(() => sounds.gymLoop.loop());
+        });
       }
     }
   }
-  // S
-
+ 
+  //space bar
+  if (keyCode === 32 && game.state === -1) {
+    game.state = 0;
+    userStartAudio();
+    sounds.gymIntro.play();
+    sounds.gymIntro.onended(() => sounds.gymLoop.loop());
+    setUpMap();
+  }
 };
+
+function setUpMap() {
+  backgroundOffset = mapVariables[game.map].backgroundOffset;
+  backgroundSize = mapVariables[game.map].backgroundSize;
+  startPos = mapVariables[game.map].startPos;
+  player.xPos = startPos.x;
+  player.yPos = startPos.y;
+  player.characterOffsetX = mapVariables[game.map].characterOffset.x;
+  player.characterOffsetY = mapVariables[game.map].characterOffset.y;
+}
 
 function keyReleased() {
   if (keyCode === UP_ARROW) {
@@ -536,20 +669,3 @@ window.setup = setup;
 window.draw = draw;
 window.keyPressed = keyPressed;
 window.keyReleased = keyReleased;
-
-class MapData {
-  constructor(bgWidth, bgHeight, startPosX, startPosY) {
-    this.backgroundSize = {
-      width: bgWidth,
-      height: bgHeight
-    };
-    this.startPos = {
-      x: startPosX,
-      y: startPosY
-    };
-    this.backgroundOffset = {
-      x: bgWidth / 2 - startPosX,
-      y: bgHeight / 2 - startPosY
-    };
-  }
-}
