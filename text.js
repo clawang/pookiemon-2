@@ -7,6 +7,15 @@ export function drawTextWithShadow(textContent, x, y, maxWidth) {
     text(textContent, x, y, maxWidth);
 }
 
+export function drawWhiteTextWithGreyShadow(textContent, x, y, maxWidth) {
+    fill(113, 113, 113);
+    text(textContent, x + 3, y + 3, maxWidth);
+    text(textContent, x, y + 3, maxWidth);
+    text(textContent, x + 3, y, maxWidth);
+    fill(255);
+    text(textContent, x, y, maxWidth);
+}
+
 export function drawBlackTextWithShadow(textContent, color, x, y, maxWidth) {
     fill(224, 220, 219);
     if (color === 1) {

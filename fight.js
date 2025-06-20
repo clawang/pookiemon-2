@@ -1,11 +1,11 @@
-import { drawYellowTextWithShadow, drawBlackTextWithShadow, drawTextWithShadow, typeWriter } from "./text.js";
+import { drawYellowTextWithShadow, drawBlackTextWithShadow, drawTextWithShadow, drawWhiteTextWithGreyShadow, typeWriter } from "./text.js";
 import { Animation } from "./animations.js";
 
 const cursorPositions = [
     [],
     [
-        [[1279, 1230], [1279, 1393]],
-        [[1879, 1230], [1879, 1393]]
+        [[1279, 1230], [1879, 1230]],
+        [[1279, 1393], [1879, 1393]]
     ],
     [
         [[77, 1220], [870, 1220]],
@@ -315,7 +315,9 @@ export function drawFight(canvasSize, multiplier, font, fight, typeWriterProps) 
         let displayText = typeWriter(text[0], typeWriterProps);
         drawTextWithShadow(displayText, 150 * multiplier, 1323 * multiplier, 1278 * multiplier);
     } else if (fight.fightScreen === 10) {
+        // pookiemon
         image(fight.pookiemonInfo, 0, 0, canvasSize.width, canvasSize.height);
+        drawWhiteTextWithGreyShadow(fight.player.level, 420 * multiplier, 1400 * multiplier);
     } else if (fight.fightScreen === 11) {
         // bag
         drawBag(fight, canvasSize, multiplier);
@@ -371,7 +373,6 @@ export function fightArrowKeyPressed(keyCode, fight, props) {
     if (keyCode === RIGHT_ARROW) {
         if (fight.fightScreen !== 2 || fight.moves[fight.cursorIndex[0]][1]) {
             fight.cursorIndex[1] = 1;
-            console.log(fight.cursorIndex);
         }
     }
 }
@@ -401,9 +402,9 @@ export function fightAKeyPressed(keyCode, fight, props) {
                 if (fight.cursorIndex[0] === 0 && fight.cursorIndex[1] === 0) {
                     fight.fightScreen = 2;
                 } else if (fight.cursorIndex[0] === 0 && fight.cursorIndex[1] === 1) {
-                    fight.fightScreen = 10;
-                } else if (fight.cursorIndex[0] === 1 && fight.cursorIndex[1] === 0) {
                     fight.fightScreen = 11;
+                } else if (fight.cursorIndex[0] === 1 && fight.cursorIndex[1] === 0) {
+                    fight.fightScreen = 10;
                 } else if (fight.cursorIndex[0] === 1 && fight.cursorIndex[1] === 1) {
                     fight.fightScreen = 12;
                 }
@@ -539,6 +540,16 @@ export function fightSKeyPressed(keyCode, fight) {
 
 const bagItems = [
     {
+        name: "Harvard Law Degree",
+        quantity: 1,
+        description: "95.83% of graduates pass the CA Bar on the first try"
+    },
+    {
+        name: "Time off work",
+        quantity: "30 days",
+        description: "Thanks Mike!"
+    },
+    {
         name: "Sunglasses",
         quantity: 1,
         description: "Ray Bans, of course."
@@ -551,7 +562,7 @@ const bagItems = [
     {
         name: "Adderall",
         quantity: "1800mg",
-        description: "To treat the raging ADHD. Or maybe the Narcolepsy."
+        description: "Performance enhacing drugs"
     },
     {
         name: "Air Tag",
@@ -559,23 +570,13 @@ const bagItems = [
         description: "How else are you supposed to know where your shit is?"
     },
     {
-        name: "Car Play",
-        quantity: 1,
-        description: "A non-negotiable."
-    },
-    {
-        name: "Loose Screws",
-        quantity: 24,
-        description: "Real mechanic shit."
-    },
-    {
-        name: "Oil Stains",
-        quantity: 57,
-        description: "It's part of the blue collar cosplay."
-    },
-    {
         name: "Fish",
         quantity: 13,
         description: "Awww Babe, you love fish!"
-    }
+    },
+    {
+        name: "PIP",
+        quantity: 1,
+        description: "It stands for Paid Interview Period."
+    },
 ];
